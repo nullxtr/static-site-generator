@@ -80,3 +80,38 @@ def split_nodes_link(old_nodes):
         if original_text != "":
             new_nodes.append(TextNode(original_text, TextType.TEXT))
     return new_nodes
+
+def text_to_textnodes(text):
+    text_nodes = []
+    last_end = 0
+
+    for match in re.finditer(r"(?P<bold>\*\*(.*?)\*\*)|(?P<italic>\*(.*?)\*)|(?P<code>\`(.*?)\`)|(?P<image>!\[([^\[\]]*)\]\(([^\(\)]*)\))|(?P<link>\[([^\[\]]*)\]\(([^\(\)]*)\))", text):
+        start, end = match.span()
+        if last_end < start:
+            text_nodes.append(TextNode(text[last_end:start], TextType.TEXT))
+        if match.group('bold'):
+            text_nodes.append(TextNode(match.group(2), TextType.BOLD))
+        elif match.group('italic'):
+            text_nodes.append(TextNode(match.group(4), TextType.ITALIC))
+        elif match.group('code'):
+            text_nodes.append(TextNode(match.group(6), TextType.CODE))
+        elif match.group('image'):
+            text_nodes.append(TextNode(match.group(8), TextType.IMAGE, match.group(9)))
+        elif match.group('link'):
+            text_nodes.append(TextNode(match.group(11), TextType.LINK, match.group(12)))
+        
+        last_end = end
+    
+    if last_end < len(text):
+        text_nodes.append(TextNode(text[last_end:], TextType.TEXT))
+
+    return text_nodes
+
+def extract_title(markdown):
+    lines = markdown.splitlines()
+    for line in lines:
+        if line.startswith("# "):
+            return line[2:].strip()
+    raise ValueError("No title found")
+
+    
